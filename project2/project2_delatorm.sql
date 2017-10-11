@@ -129,6 +129,166 @@ END;
 /
 
 --Question 3
+CREATE OR REPLACE PROCEDURE pro_DispCompany AS
+    cname VARCHAR2(50);
+    caddr VARCHAR(50);
+    nosi NUMBER;
+    cavg NUMBER;
+    undef BOOLEAN := False;
+BEGIN
+    dbms_output.put_line('CompanyName    Address        NumOfStundentInerns    School    AverageGrade');
+    dbms_output.put_line('-----------    -------        -------------------    ------    ------------');
+
+    FOR comp IN (
+        SELECT CompName, CompId FROM Company
+    ) LOOP
+        BEGIN
+        SELECT CompName, Address, NumOfStudentInterns, AVG(AverageGrade) INTO  cname, caddr, nosi, cavg FROM (
+            SELECT t.CompId, CompName, Address, NVL(t.NumOfStudentInterns, 0) AS NumOfStudentInterns, t.AverageGrade FROM (
+                SELECT t1.SchoolName, t1.CompId, NumOfStudentInterns, AverageGrade FROM (
+                    SELECT sc.SchoolName, i.CompId, AVG(st.Grade) AS AverageGrade FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN (SELECT DISTINCT StudentId, CompId FROM Internship) i ON st.StudentId = i.StudentId
+                    GROUP BY sc.SchoolName, i.CompId 
+                ) t1 JOIN (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) t2 ON t1.SchoolName = t2.SchoolName AND t1.CompId = t2.CompId 
+            ) t RIGHT JOIN Company c ON t.CompId = c.CompId
+            WHERE t.CompId = comp.compId AND NumOfStudentInterns = (SELECT MAX(NumOfStudentInterns) FROM (
+                SELECT * FROM (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) WHERE CompId = comp.compId
+            ))
+        )
+        GROUP BY CompId, CompName, Address, NumOfStudentInterns;
+        dbms_output.put(RPAD(cname, 15));
+        dbms_output.put(RPAD(caddr, 20));
+        dbms_output.put(RPAD(nosi, 18));
+        undef := false;
+        EXCEPTION WHEN NO_DATA_FOUND THEN
+            dbms_output.put_line(RPAD(comp.CompName, 35) || 0);
+            undef := True;
+        END;
+        
+        FOR tuple IN (
+            SELECT SchoolName, CompName, Address, NVL(t.NumOfStudentInterns, 0) AS NumOfStudentInterns, t.AverageGrade FROM (
+                SELECT t1.SchoolName, t1.CompId, NumOfStudentInterns, AverageGrade FROM (
+                    SELECT sc.SchoolName, i.CompId, AVG(st.Grade) AS AverageGrade FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN (SELECT DISTINCT StudentId, CompId FROM Internship) i ON st.StudentId = i.StudentId
+                    GROUP BY sc.SchoolName, i.CompId 
+                ) t1 JOIN (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) t2 ON t1.SchoolName = t2.SchoolName AND t1.CompId = t2.CompId 
+            ) t RIGHT JOIN Company c ON t.CompId = c.CompId
+            WHERE t.CompId = comp.compId AND NumOfStudentInterns = (SELECT MAX(NumOfStudentInterns) FROM (
+                SELECT * FROM (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) WHERE CompId = comp.compid
+            ))
+        ) LOOP
+            dbms_output.put(RPAD(tuple.SchoolName, 7));
+        END LOOP;
+        IF undef THEN
+            dbms_output.new_line();
+        ELSE
+            dbms_output.put_line(LPAD(cavg, 7));
+        END IF;
+    END LOOP;
+END;
+
 --Question 4
+CREATE OR REPLACE PROCEDURE pro_DispCompany AS
+    cname VARCHAR2(50);
+    caddr VARCHAR(50);
+    nosi NUMBER;
+    cavg NUMBER;
+    undef BOOLEAN := False;
+BEGIN
+    dbms_output.put_line('CompanyName    Address        NumOfStundentInerns    School    AverageGrade');
+    dbms_output.put_line('-----------    -------        -------------------    ------    ------------');
+
+    FOR comp IN (
+        SELECT CompName, CompId FROM Company
+    ) LOOP
+        BEGIN
+        SELECT CompName, Address, NumOfStudentInterns, AVG(AverageGrade) INTO  cname, caddr, nosi, cavg FROM (
+            SELECT t.CompId, CompName, Address, NVL(t.NumOfStudentInterns, 0) AS NumOfStudentInterns, t.AverageGrade FROM (
+                SELECT t1.SchoolName, t1.CompId, NumOfStudentInterns, AverageGrade FROM (
+                    SELECT sc.SchoolName, i.CompId, AVG(st.Grade) AS AverageGrade FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN (SELECT DISTINCT StudentId, CompId FROM Internship) i ON st.StudentId = i.StudentId
+                    GROUP BY sc.SchoolName, i.CompId 
+                ) t1 JOIN (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) t2 ON t1.SchoolName = t2.SchoolName AND t1.CompId = t2.CompId 
+            ) t RIGHT JOIN Company c ON t.CompId = c.CompId
+            WHERE t.CompId = comp.compId AND NumOfStudentInterns = (SELECT MAX(NumOfStudentInterns) FROM (
+                SELECT * FROM (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) WHERE CompId = comp.compId
+            ))
+        )
+        GROUP BY CompId, CompName, Address, NumOfStudentInterns;
+        dbms_output.put(RPAD(cname, 15));
+        dbms_output.put(RPAD(caddr, 20));
+        dbms_output.put(RPAD(nosi, 18));
+        undef := false;
+        EXCEPTION WHEN NO_DATA_FOUND THEN
+            dbms_output.put_line(RPAD(comp.CompName, 35) || 0);
+            undef := True;
+        END;
+        
+        FOR tuple IN (
+            SELECT SchoolName, CompName, Address, NVL(t.NumOfStudentInterns, 0) AS NumOfStudentInterns, t.AverageGrade FROM (
+                SELECT t1.SchoolName, t1.CompId, NumOfStudentInterns, AverageGrade FROM (
+                    SELECT sc.SchoolName, i.CompId, AVG(st.Grade) AS AverageGrade FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN (SELECT DISTINCT StudentId, CompId FROM Internship) i ON st.StudentId = i.StudentId
+                    GROUP BY sc.SchoolName, i.CompId 
+                ) t1 JOIN (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) t2 ON t1.SchoolName = t2.SchoolName AND t1.CompId = t2.CompId 
+            ) t RIGHT JOIN Company c ON t.CompId = c.CompId
+            WHERE t.CompId = comp.compId AND NumOfStudentInterns = (SELECT MAX(NumOfStudentInterns) FROM (
+                SELECT * FROM (
+                    SELECT sc.SchoolName, i.CompId, COUNT(*) AS NumOfStudentInterns FROM
+                    Student st JOIN School sc ON st.SchoolId = sc.SchoolId
+                    JOIN Internship i ON st.StudentId = i.StudentId
+                    GROUP BY i.CompId, sc.SchoolName
+                ) WHERE CompId = comp.compid
+            ))
+        ) LOOP
+            dbms_output.put(RPAD(tuple.SchoolName, 7));
+        END LOOP;
+        IF undef THEN
+            dbms_output.new_line();
+        ELSE
+            dbms_output.put_line(LPAD(cavg, 7));
+        END IF;
+    END LOOP;
+END;
+
 --Question 5
 --Question 6
